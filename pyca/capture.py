@@ -8,9 +8,10 @@
 '''
 
 from pyca.utils import timestamp, try_mkdir, configure_service, ensurelist
-from pyca.utils import register_ca, recording_state, update_event_status
+from pyca.utils import set_service_status, recording_state, update_event_status
 from pyca.config import config
-from pyca.db import get_session, RecordedEvent, UpcomingEvent, Status
+from pyca.db import get_session, RecordedEvent, UpcomingEvent, Status,\
+                    Service, ServiceStatus
 import logging
 import os
 import os.path
@@ -59,7 +60,7 @@ def start_capture(event):
     os.mkdir(event.directory())
 
     # Set state
-    register_ca(status='capturing')
+    set_service_status(Service.CAPTURE, ServiceStatus.BUSY)
     recording_state(event.uid, 'capturing')
     update_event_status(event, Status.RECORDING)
 
@@ -73,10 +74,10 @@ def start_capture(event):
         # Update state
         recording_state(event.uid, 'capture_error')
         update_event_status(event, Status.FAILED_RECORDING)
-        register_ca(status='idle')
+        set_service_status(Service.CAPTURE, ServiceStatus.IDLE)
         return False
 
-    register_ca(status='idle')
+    set_service_status(Service.CAPTURE, ServiceStatus.IDLE)
     update_event_status(event, Status.FINISHED_RECORDING)
     return True
 
@@ -92,7 +93,7 @@ def safe_start_capture(event):
         logging.error(traceback.format_exc())
         recording_state(event.uid, 'capture_error')
         update_event_status(event, Status.FAILED_RECORDING)
-        register_ca(status='idle')
+        set_service_status(Service.CAPTURE, ServiceStatus.IDLE)
         return False
 
 
@@ -133,9 +134,9 @@ def control_loop():
     '''Main loop of the capture agent, retrieving and checking the schedule as
     well as starting the capture process if necessry.
     '''
+    set_service_status(Service.CAPTURE, ServiceStatus.IDLE)
     while not terminate:
         # Get next recording
-        register_ca()
         events = get_session().query(UpcomingEvent)\
                               .filter(UpcomingEvent.start <= timestamp())\
                               .filter(UpcomingEvent.end > timestamp())
@@ -143,6 +144,7 @@ def control_loop():
             safe_start_capture(events[0])
         time.sleep(1.0)
     logging.info('Shutting down capture service')
+    set_service_status(Service.CAPTURE, ServiceStatus.STOPPED)
 
 
 def run():
@@ -150,9 +152,4 @@ def run():
     '''
     signal.signal(signal.SIGTERM, sigterm_handler)
     configure_service('capture.admin')
-
-    while not register_ca():
-        time.sleep(5.0)
-
     control_loop()
-    register_ca(status='unknown')
