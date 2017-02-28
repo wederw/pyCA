@@ -7,8 +7,8 @@
     :license: LGPL – see license.lgpl for more details.
 '''
 
-from pyca.utils import http_request, configure_service, set_service_status
-from pyca.utils import recording_state, update_event_status
+from pyca.utils import http_request, configure_service, set_service_status_immediate
+from pyca.utils import recording_state, update_event_status, set_service_status
 from pyca.config import config
 from pyca.db import get_session, RecordedEvent, Status, Service, ServiceStatus
 import logging
@@ -58,7 +58,7 @@ def start_ingest(event):
         return True
 
     # Upload everything
-    set_service_status(Service.INGEST, ServiceStatus.BUSY)
+    set_service_status_immediate(Service.INGEST, ServiceStatus.BUSY)
     recording_state(event.uid, 'uploading')
     update_event_status(event, Status.UPLOADING)
 
@@ -71,13 +71,13 @@ def start_ingest(event):
         # Update state if something went wrong
         recording_state(event.uid, 'upload_error')
         update_event_status(event, Status.FAILED_UPLOADING)
-        set_service_status(Service.INGEST, ServiceStatus.IDLE)
+        set_service_status_immediate(Service.INGEST, ServiceStatus.IDLE)
         return False
 
     # Update state
     recording_state(event.uid, 'upload_finished')
     update_event_status(event, Status.FINISHED_UPLOADING)
-    set_service_status(Service.INGEST, ServiceStatus.IDLE)
+    set_service_status_immediate(Service.INGEST, ServiceStatus.IDLE)
     return True
 
 
@@ -149,7 +149,7 @@ def safe_start_ingest(event):
     except Exception:
         logging.error('Start ingest failed')
         logging.error(traceback.format_exc())
-        set_service_status(Service.INGEST, ServiceStatus.IDLE)
+        set_service_status_immediate(Service.INGEST, ServiceStatus.IDLE)
         return False
 
 
@@ -167,7 +167,7 @@ def control_loop():
             safe_start_ingest(events[0])
         time.sleep(1.0)
     logging.info('Shutting down ingest service')
-    set_service_status(Service.INGEST, ServiceStatus.STOPPED)
+    set_service_status_immediate(Service.INGEST, ServiceStatus.STOPPED)
 
 
 def run():

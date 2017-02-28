@@ -216,6 +216,9 @@ def set_service_status(type, status):
         srv.timestamp = timestamp()
         dbs.add(srv)
     dbs.commit()
+    
+def set_service_status_immediate(type, status):
+    set_service_status(type, status)
     update_agent_state()
 
 
@@ -244,8 +247,8 @@ def update_agent_state():
     configure_service('capture.admin')
     status = 'idle'
 
-    '''services should are declared in error state after 5 seconds'''
-    max_timediff = 5
+    '''services should are declared in error state after 60 seconds'''
+    max_timediff = 60
     
     '''Determine reported agent state with priority list'''
     if get_service_status(db.Service.INGEST).status == db.ServiceStatus.BUSY:
@@ -284,5 +287,4 @@ def update_agent_state():
             status = 'error'
             logging.error('ingest service seems to have crashed.')
 
-    logging.info('Reporting agentstate as %s', status)
     register_ca(status=status)

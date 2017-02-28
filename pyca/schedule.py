@@ -8,7 +8,7 @@
 '''
 
 from pyca.utils import http_request, configure_service, unix_ts, timestamp,\
-                       set_service_status
+                       set_service_status_immediate, set_service_status
 from pyca.config import config
 from pyca.db import get_session, UpcomingEvent, Service, ServiceStatus
 from base64 import b64decode
@@ -113,7 +113,7 @@ def control_loop():
             time.sleep(0.1)
 
     logging.info('Shutting down schedule service')
-    set_service_status(Service.SCHEDULE, ServiceStatus.STOPPED)
+    set_service_status_immediate(Service.SCHEDULE, ServiceStatus.STOPPED)
 
 
 def run():
