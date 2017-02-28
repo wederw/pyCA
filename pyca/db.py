@@ -187,8 +187,10 @@ class ServiceStates(Base):
     type = Column('type', Integer(), nullable=False, primary_key=True)
     status = Column('status', Integer(), nullable=False,
                     default=ServiceStatus.STOPPED)
+    timestamp = Column('timestamp', Integer(), nullable=False)
 
     def __init__(self, service=None):
         if service:
             self.service = service.type
             self.status = service.status
+            self.timestamp = service.timestamp

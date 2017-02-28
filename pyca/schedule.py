@@ -96,8 +96,8 @@ def get_schedule():
 def control_loop():
     '''Main loop, retrieving the schedule.
     '''
-    set_service_status(Service.SCHEDULE, ServiceStatus.BUSY)
     while not terminate:
+        set_service_status(Service.SCHEDULE, ServiceStatus.BUSY)
         # Try getting an updated schedule
         get_schedule()
         q = get_session().query(UpcomingEvent)\

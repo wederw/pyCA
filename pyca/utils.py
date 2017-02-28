@@ -207,11 +207,13 @@ def set_service_status(type, status):
     s = dbs.query(db.ServiceStates).filter(db.ServiceStates.type == type)
     if s.count():
         dbs.query(db.ServiceStates).filter(db.ServiceStates.type == type)\
-                                   .update({'status': status})
+                                   .update({'status': status,\
+                                            'timestamp': timestamp()})
     else:
         srv = db.ServiceStates()
         srv.type = type
         srv.status = status
+        srv.timestamp = timestamp()
         dbs.add(srv)
     dbs.commit()
     update_agent_state()
@@ -225,24 +227,62 @@ def get_service_status(type):
 
     if srvs.count():
         srv = srvs[0]
-        return srv.status
+        return srv
     else:
-        return db.ServiceStatus.STOPPED
+        '''mock service if not known yet'''
+        logging.warning('service %s not known.', type)
+        srv = db.ServiceStates()
+        srv.type = type
+        srv.status = db.ServiceStatus.STOPPED
+        srv.timestamp = timestamp()
+        return srv
 
 
 def update_agent_state():
-    '''Update the current agent state in opencast.
+    '''Determine and update the current agent state in opencast.
     '''
     configure_service('capture.admin')
     status = 'idle'
 
+    '''services should are declared in error state after 5 seconds'''
+    max_timediff = 5
+    
     '''Determine reported agent state with priority list'''
-    if get_service_status(db.Service.INGEST) == db.ServiceStatus.BUSY:
+    if get_service_status(db.Service.INGEST).status == db.ServiceStatus.BUSY:
         status = 'uploading'
-    if get_service_status(db.Service.CAPTURE) == db.ServiceStatus.BUSY:
+    if get_service_status(db.Service.CAPTURE).status == db.ServiceStatus.BUSY:
         status = 'capturing'
-    if get_service_status(db.Service.SCHEDULE) == db.ServiceStatus.STOPPED:
+    if get_service_status(db.Service.SCHEDULE).status == db.ServiceStatus.STOPPED:
         status = 'offline'
+        
+    '''Check for failed services'''
+    if get_service_status(db.Service.SCHEDULE).timestamp <= timestamp() - max_timediff:
+        status = 'error'
+        logging.error('schedule service seems to have crashed.')
+
+    if get_service_status(db.Service.AGENTSTATE).timestamp <= timestamp() - max_timediff:
+        status = 'error'
+        logging.error('agentstate service seems to have crashed.')
+    
+    '''Capture process won't report back for duration of recording'''
+    if get_service_status(db.Service.CAPTURE).timestamp<= timestamp() - max_timediff:
+        if get_service_status(db.Service.CAPTURE).status != db.ServiceStatus.BUSY:
+            status = 'error'
+            logging.error('capture service seems to have crashed.')
+        else:
+            '''allow up to 15 seconds to finishing recording'''
+            events = db.get_session().query(db.UpcomingEvent)\
+                                  .filter(db.UpcomingEvent.start <= timestamp())\
+                                  .filter(db.UpcomingEvent.end > timestamp() - 15)
+            if events.count():
+                status = 'error'
+                logging.error('capture service seems to have crashed.')
+    
+    '''Ingest process can take an arbitrary amount for uploading.'''
+    if get_service_status(db.Service.INGEST).timestamp<= timestamp() - max_timediff:
+        if get_service_status(db.Service.INGEST).status != db.ServiceStatus.BUSY:
+            status = 'error'
+            logging.error('ingest service seems to have crashed.')
 
     logging.info('Reporting agentstate as %s', status)
     register_ca(status=status)

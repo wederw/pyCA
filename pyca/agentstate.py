@@ -20,8 +20,8 @@ terminate = False
 def control_loop():
     '''Main loop, updating the capture agent state.
     '''
-    set_service_status(Service.AGENTSTATE, ServiceStatus.BUSY)
     while not terminate:
+        set_service_status(Service.AGENTSTATE, ServiceStatus.BUSY)
         update_agent_state()
 
         next_update = timestamp() + config()['agent']['update_frequency']

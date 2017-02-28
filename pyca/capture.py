@@ -134,8 +134,8 @@ def control_loop():
     '''Main loop of the capture agent, retrieving and checking the schedule as
     well as starting the capture process if necessry.
     '''
-    set_service_status(Service.CAPTURE, ServiceStatus.IDLE)
     while not terminate:
+        set_service_status(Service.CAPTURE, ServiceStatus.IDLE)
         # Get next recording
         events = get_session().query(UpcomingEvent)\
                               .filter(UpcomingEvent.start <= timestamp())\
