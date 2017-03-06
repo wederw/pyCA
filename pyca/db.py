@@ -79,10 +79,10 @@ class Service():
     SCHEDULE = 4
 
     @classmethod
-    def str(cls, status):
-        '''Convert status (id) to its string name.'''
+    def str(cls, service):
+        '''Convert service (id) to its string name.'''
         for k, v in cls.__dict__.items():
-            if k[0] in 'ACIS' and v == status:
+            if k[0] in 'ACIS' and v == service:
                 return k.lower().replace('_', ' ')
 
 
