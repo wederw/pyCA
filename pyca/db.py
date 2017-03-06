@@ -66,7 +66,7 @@ class ServiceStatus():
     def str(cls, status):
         '''Convert status (id) to its string name.'''
         for k, v in cls.__dict__.items():
-            if k[0] in 'FRSU' and v == status:
+            if k[0] in 'SIB' and v == status:
                 return k.lower().replace('_', ' ')
 
 
@@ -82,7 +82,7 @@ class Service():
     def str(cls, status):
         '''Convert status (id) to its string name.'''
         for k, v in cls.__dict__.items():
-            if k[0] in 'FRSU' and v == status:
+            if k[0] in 'ACIS' and v == status:
                 return k.lower().replace('_', ' ')
 
 
