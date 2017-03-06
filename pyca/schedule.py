@@ -7,8 +7,8 @@
     :license: LGPL – see license.lgpl for more details.
 '''
 
-from pyca.utils import http_request, configure_service, unix_ts, timestamp,\
-                       set_service_status
+from pyca.utils import http_request, configure_service, unix_ts, timestamp
+from pyca.utils import set_service_status
 from pyca.config import config
 from pyca.db import get_session, UpcomingEvent, Service, ServiceStatus
 from base64 import b64decode

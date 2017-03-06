@@ -7,7 +7,8 @@
     :license: LGPL – see license.lgpl for more details.
 '''
 
-from pyca.utils import http_request, configure_service, set_service_status
+from pyca.utils import http_request, configure_service
+from pyca.utils import set_service_status, set_service_status_immediate
 from pyca.utils import recording_state, update_event_status
 from pyca.config import config
 from pyca.db import get_session, RecordedEvent, Status, Service, ServiceStatus
@@ -71,13 +72,13 @@ def start_ingest(event):
         # Update state if something went wrong
         recording_state(event.uid, 'upload_error')
         update_event_status(event, Status.FAILED_UPLOADING)
-        set_service_status(Service.INGEST, ServiceStatus.IDLE)
+        set_service_status_immediate(Service.INGEST, ServiceStatus.IDLE)
         return False
 
     # Update state
     recording_state(event.uid, 'upload_finished')
     update_event_status(event, Status.FINISHED_UPLOADING)
-    set_service_status(Service.INGEST, ServiceStatus.IDLE)
+    set_service_status_immediate(Service.INGEST, ServiceStatus.IDLE)
     return True
 
 
