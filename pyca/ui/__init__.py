@@ -12,6 +12,7 @@ import datetime
 from flask import Flask, request, send_from_directory, Response
 from flask import render_template
 app = Flask(__name__)
+import pyca.ui.jsonapi
 
 
 def dtfmt(ts):
