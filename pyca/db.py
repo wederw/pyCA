@@ -148,7 +148,7 @@ class BaseEvent():
         return {'start': self.start,
                 'end': self.end,
                 'uid': self.uid,
-                'status': self.status}
+                'status': Status.str(self.status)}
 
 
 class UpcomingEvent(Base, BaseEvent):
